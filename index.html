@@ -1,0 +1,2309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Industrial Engineering Offline Dashboard</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --sidebar-width: 260px;
+      --primary-color: #1b4965;
+      --secondary-color: #62b6cb;
+      --accent-color: #bee9e8;
+      --bg-color: #f7f9fb;
+      --text-color: #0b132b;
+      --tile-success: #2a9d8f;
+      --tile-warning: #f4a261;
+      --tile-danger: #e76f51;
+      font-size: 16px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: var(--text-color);
+      background: var(--bg-color);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--primary-color);
+      color: #fff;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h1 {
+      font-size: 1.6rem;
+      margin: 0 0 1rem;
+    }
+
+    .sidebar nav a {
+      display: block;
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      padding: 0.6rem 0.8rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.3rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .content {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+    }
+
+    header.filters {
+      background: #fff;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      box-shadow: 0 6px 14px rgba(18, 34, 62, 0.08);
+    }
+
+    header.filters label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.3rem;
+      color: var(--primary-color);
+    }
+
+    header.filters input,
+    header.filters select {
+      width: 100%;
+      padding: 0.55rem 0.6rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(27, 73, 101, 0.3);
+      font-size: 0.95rem;
+      background: #fff;
+      color: var(--text-color);
+    }
+
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tile {
+      background: #fff;
+      border-radius: 0.75rem;
+      padding: 1rem 1.2rem;
+      box-shadow: 0 12px 22px rgba(18, 34, 62, 0.08);
+      position: relative;
+    }
+
+    .tile h3 {
+      margin: 0;
+      font-size: 0.9rem;
+      color: rgba(11, 19, 43, 0.7);
+    }
+
+    .tile-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-top: 0.3rem;
+    }
+
+    .tile-sub {
+      font-size: 0.85rem;
+      color: rgba(11, 19, 43, 0.6);
+      margin-top: 0.5rem;
+    }
+
+    .tile-status.success {
+      border-left: 6px solid var(--tile-success);
+    }
+
+    .tile-status.warning {
+      border-left: 6px solid var(--tile-warning);
+    }
+
+    .tile-status.danger {
+      border-left: 6px solid var(--tile-danger);
+    }
+
+    section {
+      background: #fff;
+      border-radius: 0.85rem;
+      padding: 1.4rem 1.6rem;
+      box-shadow: 0 12px 24px rgba(18, 34, 62, 0.08);
+      margin-bottom: 1.6rem;
+    }
+
+    section h2 {
+      margin-top: 0;
+      margin-bottom: 0.8rem;
+      color: var(--primary-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(27, 73, 101, 0.15);
+      padding: 0.6rem 0.5rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(27, 73, 101, 0.08);
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    tr:hover {
+      background: rgba(190, 233, 232, 0.3);
+    }
+
+    .chart {
+      width: 100%;
+      height: 340px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    button,
+    .button-link {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 0.6rem;
+      padding: 0.55rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    button:hover,
+    .button-link:hover {
+      background: var(--secondary-color);
+    }
+
+    input[type="file"] {
+      display: block;
+      margin-top: 0.4rem;
+    }
+
+    .log {
+      font-size: 0.85rem;
+      background: rgba(27, 73, 101, 0.05);
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.6rem;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 0.8rem;
+    }
+
+    .flex {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .flex > div {
+      flex: 1 1 260px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .badge.success {
+      background: var(--tile-success);
+    }
+
+    .badge.warning {
+      background: var(--tile-warning);
+    }
+
+    .badge.danger {
+      background: var(--tile-danger);
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 1rem;
+        align-items: center;
+      }
+      .sidebar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .sidebar nav a {
+        margin-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div>
+      <h1>IE Dashboard</h1>
+      <p style="font-size:0.8rem;line-height:1.4;opacity:0.8;">Offline-first industrial engineering intelligence suite bundled inside a single HTML document.</p>
+    </div>
+    <nav id="nav"></nav>
+    <footer style="margin-top:auto;font-size:0.7rem;opacity:0.7;">Version <span id="version"></span></footer>
+  </aside>
+  <main class="content">
+    <header class="filters" id="global-filters"></header>
+    <div id="page-container"></div>
+  </main>
+
+  <script src="assets/plotly-2.27.0.min.js"></script>
+  <script src="assets/xlsx.full.min.js"></script>
+  <script>
+    const APP_VERSION = "1.0.0-html";
+    const STORAGE_KEY = "ie-dashboard-data";
+    const STORAGE_VERSION = "1.0.0";
+
+    const templates = {
+      lines: {
+        label: "Lines",
+        required: ["id", "name", "area", "is_active"],
+        optional: [],
+      },
+      production_runs: {
+        label: "Production Runs",
+        required: [
+          "line",
+          "date",
+          "shift",
+          "planned_minutes",
+          "good_count",
+          "total_count",
+          "ideal_cycle_time_sec",
+        ],
+        optional: ["notes"],
+      },
+      downtime_events: {
+        label: "Downtime Events",
+        required: [
+          "line",
+          "start_ts",
+          "end_ts",
+          "reason_code",
+          "category",
+          "description",
+        ],
+        optional: ["wo_id"],
+      },
+      maintenance_work_orders: {
+        label: "Maintenance Work Orders",
+        required: [
+          "id",
+          "asset_id",
+          "line",
+          "request_ts",
+          "start_ts",
+          "end_ts",
+          "due_date",
+          "status",
+          "type",
+          "priority",
+        ],
+        optional: [],
+      },
+      maintenance_repairs: {
+        label: "Maintenance Repairs",
+        required: [
+          "id",
+          "wo_id",
+          "fault_start_ts",
+          "repair_start_ts",
+          "repair_end_ts",
+          "technician",
+          "failure_code",
+          "comments",
+        ],
+        optional: [],
+      },
+      training_assignments: {
+        label: "Training Assignments",
+        required: [
+          "id",
+          "employee_id",
+          "course_code",
+          "role",
+          "course_name",
+          "due_date",
+          "completed_date",
+          "status",
+        ],
+        optional: [],
+      },
+      capa_records: {
+        label: "CAPA Records",
+        required: [
+          "id",
+          "title",
+          "owner",
+          "opened_date",
+          "due_date",
+          "closed_date",
+          "status",
+          "severity",
+          "root_cause",
+        ],
+        optional: [],
+      },
+      safety_incidents: {
+        label: "Safety Incidents",
+        required: [
+          "id",
+          "date",
+          "line",
+          "type",
+          "severity",
+          "lost_time_hours",
+          "description",
+          "status",
+          "corrective_actions",
+        ],
+        optional: [],
+      },
+      safety_walks: {
+        label: "Safety Walks",
+        required: [
+          "id",
+          "scheduled_date",
+          "completed_date",
+          "owner",
+          "area",
+          "status",
+          "findings_count",
+          "actions_open",
+        ],
+        optional: [],
+      },
+      hours_worked: {
+        label: "Hours Worked",
+        required: ["id", "date", "line", "hours"],
+        optional: [],
+      },
+    };
+
+    const NAV_LINKS = [
+      { href: "#overview", label: "Overview" },
+      { href: "#oee", label: "OEE" },
+      { href: "#mttr", label: "Maintenance / MTTR" },
+      { href: "#work-orders", label: "Work Orders DDA" },
+      { href: "#training", label: "Training DDA" },
+      { href: "#capa", label: "CAPA DDA" },
+      { href: "#safety", label: "Safety Incidents" },
+      { href: "#walks", label: "Safety Walks" },
+      { href: "#admin", label: "Admin" },
+    ];
+
+    const DEFAULT_DATA = () => ({
+      __meta: { version: STORAGE_VERSION, created: new Date().toISOString() },
+      lines: [
+        { id: 1, name: "Line A", area: "Packaging", is_active: 1 },
+        { id: 2, name: "Line B", area: "Assembly", is_active: 1 },
+        { id: 3, name: "Line C", area: "Assembly", is_active: 1 },
+      ],
+      shifts: [
+        { id: 1, name: "Shift 1", start_time: "06:00", end_time: "14:00" },
+        { id: 2, name: "Shift 2", start_time: "14:00", end_time: "22:00" },
+        { id: 3, name: "Shift 3", start_time: "22:00", end_time: "06:00" },
+      ],
+      production_runs: [],
+      downtime_events: [],
+      maintenance_work_orders: [],
+      maintenance_repairs: [],
+      training_assignments: [],
+      capa_records: [],
+      safety_incidents: [],
+      safety_walks: [],
+      hours_worked: [],
+      import_log: [],
+      export_log: [],
+      backup_log: [],
+      error_log: [],
+      validation_log: [],
+    });
+
+    function ensureDataShape(data) {
+      const defaults = DEFAULT_DATA();
+      Object.keys(defaults).forEach((key) => {
+        if (!(key in data)) {
+          data[key] = Array.isArray(defaults[key]) ? [] : defaults[key];
+        } else if (Array.isArray(defaults[key]) && !Array.isArray(data[key])) {
+          data[key] = [];
+        }
+      });
+      return data;
+    }
+
+    const state = {
+      data: null,
+      filters: {
+        startDate: null,
+        endDate: null,
+        line: "all",
+        shift: "all",
+        status: "all",
+      },
+    };
+
+    function loadData() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        state.data = seedWithSampleData(DEFAULT_DATA());
+        persist();
+      } else {
+        try {
+          const parsed = JSON.parse(raw);
+          if (!parsed.__meta || parsed.__meta.version !== STORAGE_VERSION) {
+            state.data = ensureDataShape({ ...DEFAULT_DATA(), ...parsed });
+            persist();
+          } else {
+            state.data = ensureDataShape(parsed);
+          }
+        } catch (err) {
+          console.error("Failed to load data, seeding defaults", err);
+          state.data = seedWithSampleData(DEFAULT_DATA());
+          persist();
+        }
+      }
+    }
+
+    function seedWithSampleData(data) {
+      if (!data.production_runs.length) {
+        const today = new Date();
+        const days = 30;
+        const lines = data.lines.map((l) => l.id);
+        for (let i = 0; i < days; i++) {
+          const date = new Date(today.getTime() - i * 86400000);
+          const dateStr = date.toISOString().slice(0, 10);
+          lines.forEach((lineId, idx) => {
+            const total = 900 + Math.floor(Math.random() * 200);
+            const good = total - Math.floor(Math.random() * 40);
+            const planned = 480;
+            const idealCycle = 2.1 - idx * 0.2;
+            data.production_runs.push({
+              id: data.production_runs.length + 1,
+              line_id: lineId,
+              date: dateStr,
+              shift_id: ((i + idx) % 3) + 1,
+              planned_minutes: planned,
+              good_count: good,
+              total_count: total,
+              ideal_cycle_time_sec: idealCycle,
+              notes: "Auto-seeded sample data",
+            });
+            const downtime = Math.max(0, Math.round(Math.random() * 60 - 10));
+            if (downtime > 5) {
+              const start = new Date(date);
+              start.setHours(8 + Math.floor(Math.random() * 4));
+              const end = new Date(start.getTime() + downtime * 60000);
+              data.downtime_events.push({
+                id: data.downtime_events.length + 1,
+                line_id: lineId,
+                start_ts: start.toISOString(),
+                end_ts: end.toISOString(),
+                reason_code: ["Mechanical", "Changeover", "Quality"][i % 3],
+                category: "unplanned",
+                description: "Auto-seeded downtime",
+                wo_id: null,
+              });
+            }
+          });
+        }
+      }
+      if (!data.maintenance_work_orders.length) {
+        for (let i = 1; i <= 60; i++) {
+          const lineId = (i % data.lines.length) + 1;
+          const due = new Date();
+          due.setDate(due.getDate() - (i % 45));
+          const end = new Date(due.getTime() + (Math.random() * 3 - 1) * 86400000);
+          const start = new Date(due.getTime() - 86400000);
+          data.maintenance_work_orders.push({
+            id: i,
+            asset_id: `AST-${100 + i}`,
+            line_id: lineId,
+            request_ts: start.toISOString(),
+            start_ts: start.toISOString(),
+            end_ts: end.toISOString(),
+            due_date: due.toISOString(),
+            status: i % 7 === 0 ? "open" : "closed",
+            type: i % 3 === 0 ? "CM" : "PM",
+            priority: ["Low", "Medium", "High"][i % 3],
+          });
+          data.maintenance_repairs.push({
+            id: i,
+            wo_id: i,
+            fault_start_ts: start.toISOString(),
+            repair_start_ts: start.toISOString(),
+            repair_end_ts: new Date(start.getTime() + (1 + Math.random() * 5) * 3600000).toISOString(),
+            technician: ["R. Smith", "K. Patel", "E. Lopez"][i % 3],
+            failure_code: ["Bearing", "Electrical", "Pneumatic"][i % 3],
+            comments: "Sample repair",
+          });
+        }
+      }
+      if (!data.training_assignments.length) {
+        for (let i = 1; i <= 45; i++) {
+          const due = new Date();
+          due.setDate(due.getDate() - (i % 60));
+          const completed = Math.random() > 0.3 ? new Date(due.getTime() - (Math.random() * 5) * 86400000) : null;
+          data.training_assignments.push({
+            id: i,
+            employee_id: `EMP-${1000 + i}`,
+            course_code: `COURSE-${(i % 5) + 1}`,
+            role: ["Operator", "Technician", "Supervisor"][i % 3],
+            course_name: ["Lockout", "PPE", "Hazmat", "Ergo", "Fire Safety"][i % 5],
+            due_date: due.toISOString(),
+            completed_date: completed ? completed.toISOString() : null,
+            status: completed ? "complete" : "open",
+          });
+        }
+      }
+      if (!data.capa_records.length) {
+        for (let i = 1; i <= 25; i++) {
+          const opened = new Date();
+          opened.setDate(opened.getDate() - i * 3);
+          const due = new Date(opened.getTime() + 86400000 * (7 + (i % 10)));
+          const closed = i % 4 === 0 ? null : new Date(due.getTime() + (Math.random() * 4 - 1) * 86400000);
+          data.capa_records.push({
+            id: i,
+            title: `CAPA-${i}`,
+            owner: ["Morgan", "Alex", "Priya", "Miguel"][i % 4],
+            opened_date: opened.toISOString(),
+            due_date: due.toISOString(),
+            closed_date: closed ? closed.toISOString() : null,
+            status: closed ? "closed" : "open",
+            severity: ["Low", "Medium", "High"][i % 3],
+            root_cause: ["Training", "Process", "Equipment"][i % 3],
+          });
+        }
+      }
+      if (!data.safety_incidents.length) {
+        for (let i = 1; i <= 30; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - i * 3);
+          data.safety_incidents.push({
+            id: i,
+            date: date.toISOString(),
+            line_id: ((i - 1) % data.lines.length) + 1,
+            type: ["recordable", "near-miss", "first aid", "LTI"][i % 4],
+            severity: ["Low", "Medium", "High"][i % 3],
+            lost_time_hours: i % 4 === 0 ? Math.round(Math.random() * 16) : 0,
+            description: "Sample safety incident",
+            status: i % 5 === 0 ? "open" : "closed",
+            corrective_actions: i % 5 === 0 ? "Investigate root cause" : "Documented",
+          });
+        }
+      }
+      if (!data.safety_walks.length) {
+        for (let i = 1; i <= 30; i++) {
+          const scheduled = new Date();
+          scheduled.setDate(scheduled.getDate() - i * 5);
+          const completed = Math.random() > 0.25 ? new Date(scheduled.getTime() + (Math.random() * 4 - 1) * 86400000) : null;
+          data.safety_walks.push({
+            id: i,
+            scheduled_date: scheduled.toISOString(),
+            completed_date: completed ? completed.toISOString() : null,
+            owner: ["Chris", "Jamila", "Reed"][i % 3],
+            area: ["Packaging", "Assembly", "Warehouse"][i % 3],
+            status: completed ? "completed" : scheduled < new Date() ? "overdue" : "scheduled",
+            findings_count: Math.floor(Math.random() * 5),
+            actions_open: Math.floor(Math.random() * 3),
+          });
+        }
+      }
+      if (!data.hours_worked.length) {
+        for (let i = 1; i <= 12; i++) {
+          const date = new Date();
+          date.setMonth(date.getMonth() - (i - 1));
+          data.lines.forEach((line) => {
+            data.hours_worked.push({
+              id: data.hours_worked.length + 1,
+              date: new Date(date.getFullYear(), date.getMonth(), 1).toISOString(),
+              line_id: line.id,
+              hours: 25000 + Math.round(Math.random() * 2000),
+            });
+          });
+        }
+      }
+      return data;
+    }
+
+    function persist() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }
+
+    function setupNavigation() {
+      const nav = document.getElementById("nav");
+      NAV_LINKS.forEach((link) => {
+        const a = document.createElement("a");
+        a.href = link.href;
+        a.textContent = link.label;
+        nav.appendChild(a);
+      });
+      updateNavActive();
+    }
+
+    function updateNavActive() {
+      const hash = window.location.hash || "#overview";
+      document.querySelectorAll(".sidebar nav a").forEach((a) => {
+        a.classList.toggle("active", a.getAttribute("href") === hash);
+      });
+    }
+
+    function setupFilters() {
+      const container = document.getElementById("global-filters");
+      container.innerHTML = "";
+      const startWrapper = document.createElement("div");
+      startWrapper.innerHTML = `<label>Start Date</label><input type="date" id="filter-start" />`;
+      const endWrapper = document.createElement("div");
+      endWrapper.innerHTML = `<label>End Date</label><input type="date" id="filter-end" />`;
+      const lineWrapper = document.createElement("div");
+      const lineOptions = ["<option value=\"all\">All Lines</option>", ...state.data.lines.map((line) => `<option value="${line.id}">${line.name}</option>`)];
+      lineWrapper.innerHTML = `<label>Line</label><select id="filter-line">${lineOptions.join("")}</select>`;
+      const shiftWrapper = document.createElement("div");
+      const shiftOptions = ["<option value=\"all\">All Shifts</option>", ...state.data.shifts.map((shift) => `<option value="${shift.id}">${shift.name}</option>`)];
+      shiftWrapper.innerHTML = `<label>Shift</label><select id="filter-shift">${shiftOptions.join("")}</select>`;
+      const statusWrapper = document.createElement("div");
+      statusWrapper.innerHTML = `<label>Status</label><select id="filter-status"><option value="all">All</option><option value="open">Open</option><option value="closed">Closed</option></select>`;
+
+      container.append(startWrapper, endWrapper, lineWrapper, shiftWrapper, statusWrapper);
+
+      container.querySelectorAll("input, select").forEach((el) => {
+        el.addEventListener("change", () => {
+          state.filters.startDate = document.getElementById("filter-start").value || null;
+          state.filters.endDate = document.getElementById("filter-end").value || null;
+          state.filters.line = document.getElementById("filter-line").value || "all";
+          state.filters.shift = document.getElementById("filter-shift").value || "all";
+          state.filters.status = document.getElementById("filter-status").value || "all";
+          renderPage();
+        });
+      });
+    }
+
+    function filterDate(dateStr) {
+      if (!dateStr) return true;
+      const date = new Date(dateStr);
+      if (Number.isNaN(date.getTime())) return false;
+      const { startDate, endDate } = state.filters;
+      if (startDate && date < new Date(startDate)) return false;
+      if (endDate && date > new Date(endDate)) return false;
+      return true;
+    }
+
+    function filterLine(lineId) {
+      return state.filters.line === "all" || Number(state.filters.line) === Number(lineId);
+    }
+
+    function filterShift(shiftId) {
+      return state.filters.shift === "all" || Number(state.filters.shift) === Number(shiftId);
+    }
+
+    function filterStatus(status) {
+      if (!status) return state.filters.status === "all";
+      if (state.filters.status === "all") return true;
+      return status.toLowerCase() === state.filters.status.toLowerCase();
+    }
+
+    function safeNumber(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function average(values) {
+      const filtered = values.filter((v) => typeof v === "number" && Number.isFinite(v));
+      if (!filtered.length) return null;
+      return filtered.reduce((a, b) => a + b, 0) / filtered.length;
+    }
+
+    function sum(values) {
+      return values.reduce((a, b) => a + safeNumber(b), 0);
+    }
+
+    function formatPct(value, fractionDigits = 1) {
+      return value == null ? "—" : `${(value * 100).toFixed(fractionDigits)}%`;
+    }
+
+    function formatNumber(value, fractionDigits = 1) {
+      return value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: fractionDigits });
+    }
+
+    function formatMinutesToHours(mins) {
+      if (mins == null) return "—";
+      const hours = mins / 60;
+      return `${hours.toFixed(1)} h`;
+    }
+
+    function renderPage() {
+      updateNavActive();
+      const hash = window.location.hash || "#overview";
+      const container = document.getElementById("page-container");
+      container.innerHTML = "";
+      switch (hash) {
+        case "#overview":
+          renderOverview(container);
+          break;
+        case "#oee":
+          renderOee(container);
+          break;
+        case "#mttr":
+          renderMttr(container);
+          break;
+        case "#work-orders":
+          renderWorkOrders(container);
+          break;
+        case "#training":
+          renderTraining(container);
+          break;
+        case "#capa":
+          renderCapa(container);
+          break;
+        case "#safety":
+          renderSafety(container);
+          break;
+        case "#walks":
+          renderSafetyWalks(container);
+          break;
+        case "#admin":
+          renderAdmin(container);
+          break;
+        default:
+          renderOverview(container);
+      }
+    }
+
+    function computeOee() {
+      const { production_runs, downtime_events } = state.data;
+      const downtimeMap = new Map();
+      downtime_events
+        .filter((dt) => dt.category === "unplanned")
+        .filter((dt) => filterLine(dt.line_id))
+        .forEach((dt) => {
+          if (!filterDate(dt.start_ts)) return;
+          const day = dt.start_ts.slice(0, 10);
+          const key = `${dt.line_id}-${day}`;
+          const duration = (new Date(dt.end_ts) - new Date(dt.start_ts)) / 60000;
+          downtimeMap.set(key, (downtimeMap.get(key) || 0) + Math.max(0, duration));
+        });
+
+      const results = [];
+      production_runs
+        .filter((run) => filterLine(run.line_id))
+        .filter((run) => filterShift(run.shift_id))
+        .filter((run) => filterDate(run.date))
+        .forEach((run) => {
+          const key = `${run.line_id}-${run.date}`;
+          const planned = safeNumber(run.planned_minutes);
+          const downtime = downtimeMap.get(key) || 0;
+          const operating = Math.max(0, planned - downtime);
+          const availability = planned > 0 ? operating / planned : null;
+          const performance = operating > 0 && run.total_count > 0 && run.ideal_cycle_time_sec
+            ? (run.ideal_cycle_time_sec * run.total_count) / (operating * 60)
+            : null;
+          const quality = run.total_count > 0 && run.good_count != null
+            ? run.good_count / run.total_count
+            : null;
+          const oee = [availability, performance, quality].some((v) => v == null)
+            ? null
+            : availability * performance * quality;
+          results.push({
+            line_id: run.line_id,
+            date: run.date,
+            planned_minutes: planned,
+            downtime,
+            operating,
+            availability,
+            performance,
+            quality,
+            oee,
+            good_count: run.good_count,
+            total_count: run.total_count,
+          });
+        });
+      return results;
+    }
+
+    function renderOverview(container) {
+      const oeeData = computeOee();
+      const mttr = computeMttr();
+      const wo = computeWorkOrderDda();
+      const training = computeTrainingCompliance();
+      const capa = computeCapaDda();
+      const safety = computeSafetySummary();
+      const walks = computeSafetyWalks();
+
+      const avgOee = average(oeeData.map((d) => d.oee));
+      const availability = average(oeeData.map((d) => d.availability));
+      const performance = average(oeeData.map((d) => d.performance));
+      const quality = average(oeeData.map((d) => d.quality));
+      const mttrValue = average(Object.values(mttr).map((d) => d.mttr_minutes));
+      const overdueWo = wo.detail.filter((d) => d.on_time === false).length;
+      const overdueTraining = training.detail.filter((d) => d.days_overdue > 0).length;
+      const overdueCapa = capa.detail.filter((d) => d.status === "open" && d.days_late > 0).length;
+      const openIncidents = safety.openIncidents;
+      const overdueWalks = walks.overdue;
+
+      const tileData = [
+        { title: "Overall OEE", value: formatPct(avgOee), status: classifyPct(avgOee) },
+        { title: "Availability", value: formatPct(availability), status: classifyPct(availability) },
+        { title: "Performance", value: formatPct(performance), status: classifyPct(performance) },
+        { title: "Quality", value: formatPct(quality), status: classifyPct(quality) },
+        { title: "Average MTTR", value: mttrValue ? `${mttrValue.toFixed(1)} min` : "—", status: classifyInverse(mttrValue, 120, 240) },
+        { title: "Overdue Work Orders", value: overdueWo.toString(), status: classifyInverse(overdueWo, 5, 10) },
+        { title: "Overdue Training", value: overdueTraining.toString(), status: classifyInverse(overdueTraining, 5, 10) },
+        { title: "Overdue CAPAs", value: overdueCapa.toString(), status: classifyInverse(overdueCapa, 3, 6) },
+        { title: "Open Safety Incidents", value: openIncidents.toString(), status: classifyInverse(openIncidents, 2, 5) },
+        { title: "Overdue Safety Walks", value: overdueWalks.toString(), status: classifyInverse(overdueWalks, 2, 4) },
+      ];
+
+      const tileGrid = document.createElement("div");
+      tileGrid.className = "tile-grid";
+      tileGrid.innerHTML = tileData
+        .map(
+          (tile) => `
+            <div class="tile tile-status ${tile.status}">
+              <h3>${tile.title}</h3>
+              <div class="tile-value">${tile.value}</div>
+            </div>
+          `
+        )
+        .join("");
+      container.appendChild(tileGrid);
+
+      const summary = document.createElement("section");
+      summary.innerHTML = `
+        <h2>Cross-Module Highlights</h2>
+        <div class="flex">
+          <div>
+            <h3>Maintenance Health</h3>
+            <p>MTTR averaged <strong>${mttrValue ? `${mttrValue.toFixed(1)} minutes` : "N/A"}</strong> across ${Object.keys(mttr).length} asset-line combinations.</p>
+            <p>${wo.detail.length} work orders evaluated with an on-time rate of <strong>${wo.pct_on_time ? wo.pct_on_time.toFixed(1) : "—"}%</strong>.</p>
+          </div>
+          <div>
+            <h3>People Readiness</h3>
+            <p>Training compliance sits at <strong>${training.compliance_pct ? training.compliance_pct.toFixed(1) : "—"}%</strong> with ${training.overdue} overdue assignments.</p>
+            <p>CAPA adherence: <strong>${capa.pct_on_time ? capa.pct_on_time.toFixed(1) : "—"}%</strong> on-time closure.</p>
+          </div>
+          <div>
+            <h3>Safety Pulse</h3>
+            <p>${safety.totalIncidents} incidents recorded in the filtered window, ${safety.recordables} recordable, ${safety.lti} lost-time.</p>
+            <p>TRIR: <strong>${safety.trir ? safety.trir.toFixed(2) : "—"}</strong>. Safety walk on-time rate: <strong>${walks.onTimeRate ? walks.onTimeRate.toFixed(1) : "—"}%</strong>.</p>
+          </div>
+        </div>
+      `;
+      container.appendChild(summary);
+
+      const logSection = document.createElement("section");
+      logSection.innerHTML = `
+        <h2>Recent Activity</h2>
+        <div class="flex">
+          <div>
+            <h3>Imports</h3>
+            <div class="log">${formatLog(state.data.import_log)}</div>
+          </div>
+          <div>
+            <h3>Exports</h3>
+            <div class="log">${formatLog(state.data.export_log)}</div>
+          </div>
+          <div>
+            <h3>Backups</h3>
+            <div class="log">${formatLog(state.data.backup_log)}</div>
+          </div>
+        </div>
+      `;
+      container.appendChild(logSection);
+    }
+
+    function classifyPct(value) {
+      if (value == null) return "warning";
+      if (value >= 0.85) return "success";
+      if (value >= 0.65) return "warning";
+      return "danger";
+    }
+
+    function classifyInverse(value, good, warn) {
+      if (value == null) return "warning";
+      if (value <= good) return "success";
+      if (value <= warn) return "warning";
+      return "danger";
+    }
+
+    function formatLog(items) {
+      if (!items.length) return "<p>No activity logged yet.</p>";
+      return `<ul>${items
+        .slice(-8)
+        .reverse()
+        .map((item) => `<li>${item}</li>`)
+        .join("")}</ul>`;
+    }
+    function renderOee(container) {
+      const data = computeOee();
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>OEE Summary</h2>
+        <div class="tile-grid">
+          ${state.data.lines
+            .map((line) => {
+              const lineData = data.filter((row) => row.line_id === line.id);
+              const avgOee = average(lineData.map((row) => row.oee));
+              return `
+                <div class="tile tile-status ${classifyPct(avgOee)}">
+                  <h3>${line.name}</h3>
+                  <div class="tile-value">${formatPct(avgOee)}</div>
+                  <div class="tile-sub">${lineData.length} runs evaluated</div>
+                </div>`;
+            })
+            .join("")}
+        </div>
+        <div id="oee-chart" class="chart"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Line</th>
+              <th>Availability</th>
+              <th>Performance</th>
+              <th>Quality</th>
+              <th>OEE</th>
+              <th>Downtime (min)</th>
+              <th>Good</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data
+              .map((row) => {
+                const line = state.data.lines.find((l) => l.id === row.line_id);
+                return `
+                  <tr>
+                    <td>${row.date}</td>
+                    <td>${line ? line.name : row.line_id}</td>
+                    <td>${formatPct(row.availability)}</td>
+                    <td>${formatPct(row.performance)}</td>
+                    <td>${formatPct(row.quality)}</td>
+                    <td>${formatPct(row.oee)}</td>
+                    <td>${row.downtime.toFixed(1)}</td>
+                    <td>${row.good_count}</td>
+                    <td>${row.total_count}</td>
+                  </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(section);
+
+      if (data.length) {
+        const grouped = {};
+        data.forEach((row) => {
+          const key = state.data.lines.find((l) => l.id === row.line_id)?.name || `Line ${row.line_id}`;
+          if (!grouped[key]) grouped[key] = { dates: [], oee: [] };
+          grouped[key].dates.push(row.date);
+          grouped[key].oee.push(row.oee);
+        });
+        const traces = Object.entries(grouped).map(([name, value]) => ({
+          x: value.dates,
+          y: value.oee.map((v) => (v == null ? null : Number((v * 100).toFixed(2)))),
+          mode: "lines+markers",
+          name,
+        }));
+        Plotly.react("oee-chart", traces, {
+          margin: { t: 30, r: 10, l: 50, b: 50 },
+          xaxis: { title: "Date" },
+          yaxis: { title: "OEE %", range: [0, 100] },
+          legend: { orientation: "h" },
+        }, { displayModeBar: false, responsive: true });
+      }
+    }
+
+    function computeMttr() {
+      const { maintenance_repairs, maintenance_work_orders } = state.data;
+      const mapWoLine = new Map(maintenance_work_orders.map((wo) => [wo.id, wo.line_id]));
+      const durations = {};
+      maintenance_repairs.forEach((rep) => {
+        const start = new Date(rep.repair_start_ts);
+        const end = new Date(rep.repair_end_ts);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+        if (!filterDate(rep.repair_start_ts) || !filterDate(rep.repair_end_ts)) return;
+        const lineId = mapWoLine.get(rep.wo_id);
+        if (!filterLine(lineId)) return;
+        const key = `${lineId}-${rep.wo_id}`;
+        const minutes = Math.max(0, (end - start) / 60000);
+        if (!durations[key]) {
+          durations[key] = {
+            line_id: lineId,
+            wo_id: rep.wo_id,
+            repairs: 0,
+            total_minutes: 0,
+          };
+        }
+        durations[key].repairs += 1;
+        durations[key].total_minutes += minutes;
+      });
+      Object.values(durations).forEach((entry) => {
+        entry.mttr_minutes = entry.repairs ? entry.total_minutes / entry.repairs : null;
+      });
+      return durations;
+    }
+
+    function renderMttr(container) {
+      const durations = computeMttr();
+      const entries = Object.values(durations);
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>Mean Time To Repair</h2>
+        <div class="tile-grid">
+          <div class="tile tile-status ${classifyInverse(average(entries.map((e) => e.mttr_minutes)), 120, 240)}">
+            <h3>Average MTTR</h3>
+            <div class="tile-value">${entries.length ? `${average(entries.map((e) => e.mttr_minutes)).toFixed(1)} min` : "—"}</div>
+          </div>
+          <div class="tile">
+            <h3>Total Repairs</h3>
+            <div class="tile-value">${sum(entries.map((e) => e.repairs))}</div>
+          </div>
+          <div class="tile">
+            <h3>Total Repair Hours</h3>
+            <div class="tile-value">${formatMinutesToHours(sum(entries.map((e) => e.total_minutes)))}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Line</th>
+              <th>Work Order</th>
+              <th>Repairs</th>
+              <th>Total Minutes</th>
+              <th>MTTR (min)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${entries
+              .map((row) => {
+                const line = state.data.lines.find((l) => l.id === row.line_id);
+                return `
+                  <tr>
+                    <td>${line ? line.name : row.line_id}</td>
+                    <td>${row.wo_id}</td>
+                    <td>${row.repairs}</td>
+                    <td>${row.total_minutes.toFixed(1)}</td>
+                    <td>${row.mttr_minutes ? row.mttr_minutes.toFixed(1) : "—"}</td>
+                  </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(section);
+    }
+
+    function computeWorkOrderDda() {
+      const { maintenance_work_orders } = state.data;
+      const detail = [];
+      maintenance_work_orders
+        .filter((wo) => filterLine(wo.line_id))
+        .filter((wo) => filterStatus(wo.status))
+        .forEach((wo) => {
+          if (!filterDate(wo.due_date) && !filterDate(wo.end_ts)) return;
+          if (!wo.end_ts || !wo.due_date) {
+            detail.push({
+              id: wo.id,
+              due_date: wo.due_date,
+              end_ts: wo.end_ts,
+              on_time: null,
+              days_late: null,
+              status: wo.status,
+            });
+            return;
+          }
+          const due = new Date(wo.due_date);
+          const end = new Date(wo.end_ts);
+          const delta = Math.floor((end - due) / 86400000);
+          detail.push({
+            id: wo.id,
+            due_date: wo.due_date,
+            end_ts: wo.end_ts,
+            on_time: delta <= 0,
+            days_late: Math.max(0, delta),
+            status: wo.status,
+          });
+        });
+      const completed = detail.filter((d) => d.on_time != null && d.status && d.status.toLowerCase() === "closed");
+      const onTime = completed.filter((d) => d.on_time).length;
+      const pct_on_time = completed.length ? (onTime / completed.length) * 100 : null;
+      return { pct_on_time, detail };
+    }
+
+    function renderWorkOrders(container) {
+      const { pct_on_time, detail } = computeWorkOrderDda();
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>Work Order Due-Date Adherence</h2>
+        <div class="tile-grid">
+          <div class="tile tile-status ${classifyPct(pct_on_time != null ? pct_on_time / 100 : null)}">
+            <h3>On-time Completion</h3>
+            <div class="tile-value">${pct_on_time != null ? `${pct_on_time.toFixed(1)}%` : "—"}</div>
+          </div>
+          <div class="tile">
+            <h3>Completed WOs</h3>
+            <div class="tile-value">${detail.filter((d) => d.status && d.status.toLowerCase() === "closed").length}</div>
+          </div>
+          <div class="tile">
+            <h3>Overdue WOs</h3>
+            <div class="tile-value">${detail.filter((d) => d.days_late > 0).length}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Due Date</th>
+              <th>Completed</th>
+              <th>Status</th>
+              <th>On Time</th>
+              <th>Days Late</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${detail
+              .map(
+                (row) => `
+                <tr>
+                  <td>${row.id}</td>
+                  <td>${row.due_date ? row.due_date.slice(0, 10) : "—"}</td>
+                  <td>${row.end_ts ? row.end_ts.slice(0, 10) : "—"}</td>
+                  <td>${row.status || "—"}</td>
+                  <td>${row.on_time == null ? "—" : row.on_time ? "Yes" : "No"}</td>
+                  <td>${row.days_late != null ? row.days_late : "—"}</td>
+                </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(section);
+    }
+
+
+    function computeTrainingCompliance(asOfDate = new Date()) {
+      const { training_assignments } = state.data;
+      const detail = [];
+      let compliant = 0;
+      let total = 0;
+      let overdue = 0;
+      training_assignments
+        .filter((row) => filterDate(row.due_date) || filterDate(row.completed_date))
+        .forEach((row) => {
+          total += 1;
+          const due = row.due_date ? new Date(row.due_date) : null;
+          const completed = row.completed_date ? new Date(row.completed_date) : null;
+          let on_time = null;
+          let days_overdue = null;
+          if (due) {
+            if (completed) {
+              on_time = completed <= due;
+              if (on_time) compliant += 1;
+              else days_overdue = Math.max(0, Math.floor((completed - due) / 86400000));
+            } else {
+              const asOf = new Date(asOfDate);
+              if (asOf > due) {
+                days_overdue = Math.max(0, Math.floor((asOf - due) / 86400000));
+                overdue += 1;
+              }
+            }
+          }
+          detail.push({
+            employee_id: row.employee_id,
+            course_code: row.course_code,
+            course_name: row.course_name,
+            due_date: row.due_date,
+            completed_date: row.completed_date,
+            status: row.status,
+            on_time,
+            days_overdue,
+          });
+        });
+      const compliance_pct = total ? (compliant / total) * 100 : null;
+      return { compliance_pct, overdue, detail };
+    }
+
+    function renderTraining(container) {
+      const { compliance_pct, overdue, detail } = computeTrainingCompliance();
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>Training Compliance</h2>
+        <div class="tile-grid">
+          <div class="tile tile-status ${classifyPct(compliance_pct != null ? compliance_pct / 100 : null)}">
+            <h3>Compliance</h3>
+            <div class="tile-value">${compliance_pct != null ? `${compliance_pct.toFixed(1)}%` : "—"}</div>
+          </div>
+          <div class="tile">
+            <h3>Assignments</h3>
+            <div class="tile-value">${detail.length}</div>
+          </div>
+          <div class="tile tile-status ${classifyInverse(overdue, 5, 10)}">
+            <h3>Overdue</h3>
+            <div class="tile-value">${overdue}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Course</th>
+              <th>Due Date</th>
+              <th>Completed</th>
+              <th>Status</th>
+              <th>On Time</th>
+              <th>Days Overdue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${detail
+              .map(
+                (row) => `
+                <tr>
+                  <td>${row.employee_id}</td>
+                  <td>${row.course_name || row.course_code}</td>
+                  <td>${row.due_date ? row.due_date.slice(0, 10) : "—"}</td>
+                  <td>${row.completed_date ? row.completed_date.slice(0, 10) : "—"}</td>
+                  <td>${row.status || "—"}</td>
+                  <td>${row.on_time == null ? "—" : row.on_time ? "Yes" : "No"}</td>
+                  <td>${row.days_overdue != null ? row.days_overdue : "—"}</td>
+                </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(section);
+    }
+
+    function computeCapaDda() {
+      const { capa_records } = state.data;
+      const detail = [];
+      let total = 0;
+      let onTime = 0;
+      capa_records
+        .filter((row) => filterDate(row.due_date) || filterDate(row.closed_date))
+        .forEach((row) => {
+          const due = row.due_date ? new Date(row.due_date) : null;
+          const closed = row.closed_date ? new Date(row.closed_date) : null;
+          let on_time = null;
+          let days_late = null;
+          if (due && closed) {
+            total += 1;
+            const delta = Math.floor((closed - due) / 86400000);
+            on_time = delta <= 0;
+            days_late = Math.max(0, delta);
+            if (on_time) onTime += 1;
+          }
+          detail.push({
+            id: row.id,
+            title: row.title,
+            owner: row.owner,
+            severity: row.severity,
+            status: row.status,
+            due_date: row.due_date,
+            closed_date: row.closed_date,
+            on_time,
+            days_late,
+          });
+        });
+      const pct_on_time = total ? (onTime / total) * 100 : null;
+      const overdue = detail.filter((row) => row.status === "open" && row.due_date && new Date(row.due_date) < new Date()).length;
+      return { pct_on_time, overdue, detail };
+    }
+
+    function renderCapa(container) {
+      const { pct_on_time, overdue, detail } = computeCapaDda();
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>CAPA Due-Date Adherence</h2>
+        <div class="tile-grid">
+          <div class="tile tile-status ${classifyPct(pct_on_time != null ? pct_on_time / 100 : null)}">
+            <h3>On-time Closure</h3>
+            <div class="tile-value">${pct_on_time != null ? `${pct_on_time.toFixed(1)}%` : "—"}</div>
+          </div>
+          <div class="tile">
+            <h3>Open CAPAs</h3>
+            <div class="tile-value">${detail.filter((d) => d.status === "open").length}</div>
+          </div>
+          <div class="tile tile-status ${classifyInverse(overdue, 3, 6)}">
+            <h3>Overdue CAPAs</h3>
+            <div class="tile-value">${overdue}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Owner</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Due</th>
+              <th>Closed</th>
+              <th>On Time</th>
+              <th>Days Late</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${detail
+              .map(
+                (row) => `
+                <tr>
+                  <td>${row.id}</td>
+                  <td>${row.title}</td>
+                  <td>${row.owner}</td>
+                  <td>${row.severity}</td>
+                  <td>${row.status}</td>
+                  <td>${row.due_date ? row.due_date.slice(0, 10) : "—"}</td>
+                  <td>${row.closed_date ? row.closed_date.slice(0, 10) : "—"}</td>
+                  <td>${row.on_time == null ? "—" : row.on_time ? "Yes" : "No"}</td>
+                  <td>${row.days_late != null ? row.days_late : "—"}</td>
+                </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(section);
+    }
+
+    function computeSafetySummary() {
+      const { safety_incidents, hours_worked } = state.data;
+      const filtered = safety_incidents
+        .filter((row) => filterDate(row.date))
+        .filter((row) => filterLine(row.line_id))
+        .filter((row) => filterStatus(row.status));
+      const totalIncidents = filtered.length;
+      const recordables = filtered.filter((row) => row.type && row.type.toLowerCase() === "recordable").length;
+      const lti = filtered.filter((row) => row.type && row.type.toLowerCase() === "lti").length;
+      const openIncidents = filtered.filter((row) => row.status && row.status.toLowerCase() === "open").length;
+
+      let totalHours = 0;
+      hours_worked
+        .filter((row) => filterDate(row.date))
+        .filter((row) => filterLine(row.line_id))
+        .forEach((row) => {
+          totalHours += safeNumber(row.hours);
+        });
+      const trir = totalHours > 0 ? (recordables * 200000) / totalHours : null;
+
+      const byType = {};
+      filtered.forEach((row) => {
+        const type = row.type || "Unknown";
+        byType[type] = (byType[type] || 0) + 1;
+      });
+
+      return { totalIncidents, recordables, lti, openIncidents, trir, byType, detail: filtered };
+    }
+
+    function renderSafety(container) {
+      const summary = computeSafetySummary();
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>Safety Incident Metrics</h2>
+        <div class="tile-grid">
+          <div class="tile">
+            <h3>Total Incidents</h3>
+            <div class="tile-value">${summary.totalIncidents}</div>
+          </div>
+          <div class="tile">
+            <h3>Recordable</h3>
+            <div class="tile-value">${summary.recordables}</div>
+          </div>
+          <div class="tile">
+            <h3>Lost Time Incidents</h3>
+            <div class="tile-value">${summary.lti}</div>
+          </div>
+          <div class="tile tile-status ${classifyInverse(summary.openIncidents, 2, 4)}">
+            <h3>Open Incidents</h3>
+            <div class="tile-value">${summary.openIncidents}</div>
+          </div>
+          <div class="tile tile-status ${classifyInverse(summary.trir, 1.5, 2.5)}">
+            <h3>TRIR</h3>
+            <div class="tile-value">${summary.trir ? summary.trir.toFixed(2) : "—"}</div>
+          </div>
+        </div>
+        <div id="safety-type-chart" class="chart"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Line</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Lost Time Hours</th>
+              <th>Status</th>
+              <th>Corrective Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summary.detail
+              .map((row) => {
+                const line = state.data.lines.find((l) => l.id === row.line_id);
+                return `
+                <tr>
+                  <td>${row.id}</td>
+                  <td>${row.date ? row.date.slice(0, 10) : "—"}</td>
+                  <td>${line ? line.name : row.line_id || "—"}</td>
+                  <td>${row.type}</td>
+                  <td>${row.severity}</td>
+                  <td>${row.lost_time_hours}</td>
+                  <td>${row.status}</td>
+                  <td>${row.corrective_actions}</td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(section);
+
+      const labels = Object.keys(summary.byType);
+      const values = Object.values(summary.byType);
+      if (labels.length) {
+        Plotly.react("safety-type-chart", [
+          {
+            type: "bar",
+            x: labels,
+            y: values,
+            marker: { color: values.map((_, idx) => ["#1b4965", "#62b6cb", "#bee9e8", "#5fa8d3"][idx % 4]) },
+          },
+        ], {
+          margin: { t: 30, r: 10, l: 50, b: 50 },
+          xaxis: { title: "Incident Type" },
+          yaxis: { title: "Count" },
+        }, { displayModeBar: false, responsive: true });
+      }
+    }
+
+    function computeSafetyWalks() {
+      const { safety_walks } = state.data;
+      const detail = safety_walks
+        .filter((row) => filterDate(row.scheduled_date))
+        .filter((row) => filterStatus(row.status));
+      let total = 0;
+      let onTime = 0;
+      let overdue = 0;
+      const breakdown = {};
+      detail.forEach((row) => {
+        const scheduled = new Date(row.scheduled_date);
+        const completed = row.completed_date ? new Date(row.completed_date) : null;
+        let on_time = null;
+        let days_late = null;
+        if (completed) {
+          total += 1;
+          on_time = completed <= scheduled;
+          if (on_time) onTime += 1;
+          else days_late = Math.max(0, Math.floor((completed - scheduled) / 86400000));
+        } else if (scheduled < new Date()) {
+          overdue += 1;
+          days_late = Math.max(0, Math.floor((new Date() - scheduled) / 86400000));
+        }
+        row.on_time = on_time;
+        row.days_late = days_late;
+        const owner = row.owner || "Unassigned";
+        if (!breakdown[owner]) breakdown[owner] = { total: 0, onTime: 0 };
+        if (completed) {
+          breakdown[owner].total += 1;
+          if (on_time) breakdown[owner].onTime += 1;
+        }
+      });
+      const onTimeRate = total ? (onTime / total) * 100 : null;
+      return { onTimeRate, overdue, detail, breakdown };
+    }
+
+    function renderSafetyWalks(container) {
+      const summary = computeSafetyWalks();
+      const section = document.createElement("section");
+      section.innerHTML = `
+        <h2>Safety Walk Adherence</h2>
+        <div class="tile-grid">
+          <div class="tile tile-status ${classifyPct(summary.onTimeRate != null ? summary.onTimeRate / 100 : null)}">
+            <h3>On-time Completion</h3>
+            <div class="tile-value">${summary.onTimeRate != null ? `${summary.onTimeRate.toFixed(1)}%` : "—"}</div>
+          </div>
+          <div class="tile">
+            <h3>Completed Walks</h3>
+            <div class="tile-value">${summary.detail.filter((d) => d.completed_date).length}</div>
+          </div>
+          <div class="tile tile-status ${classifyInverse(summary.overdue, 2, 4)}">
+            <h3>Overdue</h3>
+            <div class="tile-value">${summary.overdue}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Scheduled</th>
+              <th>Completed</th>
+              <th>Owner</th>
+              <th>Area</th>
+              <th>Status</th>
+              <th>On Time</th>
+              <th>Days Late</th>
+              <th>Findings</th>
+              <th>Actions Open</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summary.detail
+              .map(
+                (row) => `
+                <tr>
+                  <td>${row.id}</td>
+                  <td>${row.scheduled_date ? row.scheduled_date.slice(0, 10) : "—"}</td>
+                  <td>${row.completed_date ? row.completed_date.slice(0, 10) : "—"}</td>
+                  <td>${row.owner}</td>
+                  <td>${row.area}</td>
+                  <td>${row.status}</td>
+                  <td>${row.on_time == null ? "—" : row.on_time ? "Yes" : "No"}</td>
+                  <td>${row.days_late != null ? row.days_late : "—"}</td>
+                  <td>${row.findings_count}</td>
+                  <td>${row.actions_open}</td>
+                </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+        <details>
+          <summary>Owner Leaderboard</summary>
+          <table>
+            <thead>
+              <tr><th>Owner</th><th>On-time %</th><th>Completed</th></tr>
+            </thead>
+            <tbody>
+              ${Object.entries(summary.breakdown)
+                .map(([owner, stats]) => {
+                  const rate = stats.total ? (stats.onTime / stats.total) * 100 : null;
+                  return `<tr><td>${owner}</td><td>${rate != null ? rate.toFixed(1) + '%' : "—"}</td><td>${stats.total}</td></tr>`;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </details>
+      `;
+      container.appendChild(section);
+    }
+
+    function formatIso(date) {
+      if (!date) return null;
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return null;
+      return d.toISOString();
+    }
+
+    function resolveLineId(lineName) {
+      if (lineName == null || lineName === "") return null;
+      const existing = state.data.lines.find((line) => line.name.toLowerCase() === String(lineName).toLowerCase());
+      if (existing) return existing.id;
+      const nextId = state.data.lines.reduce((max, line) => Math.max(max, line.id), 0) + 1;
+      const newLine = { id: nextId, name: String(lineName).trim(), area: "Imported", is_active: 1 };
+      state.data.lines.push(newLine);
+      return nextId;
+    }
+
+    function resolveShiftId(shiftName) {
+      if (shiftName == null || shiftName === "") return null;
+      const existing = state.data.shifts.find((shift) => shift.name.toLowerCase() === String(shiftName).toLowerCase());
+      if (existing) return existing.id;
+      const nextId = state.data.shifts.reduce((max, shift) => Math.max(max, shift.id), 0) + 1;
+      const newShift = { id: nextId, name: String(shiftName).trim(), start_time: null, end_time: null };
+      state.data.shifts.push(newShift);
+      return nextId;
+    }
+
+    function logEvent(key, message) {
+      const ts = new Date().toISOString();
+      if (!state.data[key]) state.data[key] = [];
+      state.data[key].push(`${ts} — ${message}`);
+      state.data[key] = state.data[key].slice(-200);
+      persist();
+    }
+
+    function isLocalResource(url) {
+      if (!url) return true;
+      try {
+        const resolved = new URL(url, window.location.href);
+        if (window.location.origin === 'null') {
+          return resolved.protocol === 'file:';
+        }
+        return resolved.origin === window.location.origin;
+      } catch (error) {
+        return true;
+      }
+    }
+
+    function runOfflineAudit() {
+      const results = [];
+      const offline = navigator.onLine === false;
+      results.push({
+        label: 'Device offline',
+        pass: offline,
+        detail: offline ? '' : 'Browser reports active connectivity.',
+      });
+
+      const externalScripts = Array.from(document.querySelectorAll('script[src]'))
+        .map((script) => script.getAttribute('src'))
+        .filter((src) => src && !isLocalResource(src));
+      results.push({
+        label: 'External scripts',
+        pass: externalScripts.length === 0,
+        detail: externalScripts.join(', '),
+      });
+
+      const externalLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'))
+        .map((link) => link.getAttribute('href'))
+        .filter((href) => href && !href.startsWith('data:') && !isLocalResource(href));
+      results.push({
+        label: 'External stylesheets',
+        pass: externalLinks.length === 0,
+        detail: externalLinks.join(', '),
+      });
+
+      const externalResources = performance
+        .getEntriesByType('resource')
+        .map((entry) => entry.name)
+        .filter((name) => name && name.startsWith('http'))
+        .filter((name) => !isLocalResource(name));
+      results.push({
+        label: 'Runtime fetches',
+        pass: externalResources.length === 0,
+        detail: externalResources.join(', '),
+      });
+
+      const container = document.getElementById('offline-audit-results');
+      const auditPassed = results.every((item) => item.pass);
+      const items = results
+        .map((item) => {
+          const status = item.pass ? '✅' : '⚠️';
+          const detail = item.detail ? ` — ${item.detail}` : '';
+          return `<li>${status} <strong>${item.label}:</strong> ${item.pass ? 'Pass' : 'Review'}${detail}</li>`;
+        })
+        .join('');
+      container.innerHTML = `<strong>${auditPassed ? 'Offline audit passed' : 'Offline audit needs attention'}</strong><ul>${items}</ul>`;
+      logEvent(
+        'validation_log',
+        `Offline audit ${auditPassed ? 'passed' : 'detected issues'}${
+          auditPassed ? '' : ` — ${results
+            .filter((item) => !item.pass)
+            .map((item) => `${item.label}${item.detail ? `: ${item.detail}` : ''}`)
+            .join('; ')}`
+        }`,
+      );
+    }
+
+    function prepareTemplateRows(key) {
+      const tpl = templates[key];
+      const row = {};
+      tpl.required.concat(tpl.optional).forEach((col) => {
+        row[col] = "";
+      });
+      return [row];
+    }
+
+    function downloadTemplate(key) {
+      const tpl = templates[key];
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(prepareTemplateRows(key), { header: tpl.required.concat(tpl.optional) });
+      XLSX.utils.book_append_sheet(wb, ws, tpl.label);
+      XLSX.writeFile(wb, `${tpl.label.replace(/\s+/g, '_').toLowerCase()}_template.xlsx`);
+      logEvent('export_log', `Template exported: ${tpl.label}`);
+    }
+
+    function prepareExportRows(key) {
+      switch (key) {
+        case 'production_runs':
+          return state.data.production_runs.map((row) => ({
+            id: row.id,
+            line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+            date: row.date,
+            shift: state.data.shifts.find((s) => s.id === row.shift_id)?.name || row.shift_id,
+            planned_minutes: row.planned_minutes,
+            good_count: row.good_count,
+            total_count: row.total_count,
+            ideal_cycle_time_sec: row.ideal_cycle_time_sec,
+            notes: row.notes || ''
+          }));
+        case 'downtime_events':
+          return state.data.downtime_events.map((row) => ({
+            id: row.id,
+            line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+            start_ts: row.start_ts,
+            end_ts: row.end_ts,
+            reason_code: row.reason_code,
+            category: row.category,
+            description: row.description,
+            wo_id: row.wo_id
+          }));
+        case 'maintenance_work_orders':
+          return state.data.maintenance_work_orders.map((row) => ({
+            id: row.id,
+            asset_id: row.asset_id,
+            line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+            request_ts: row.request_ts,
+            start_ts: row.start_ts,
+            end_ts: row.end_ts,
+            due_date: row.due_date,
+            status: row.status,
+            type: row.type,
+            priority: row.priority
+          }));
+        case 'maintenance_repairs':
+          return state.data.maintenance_repairs.map((row) => ({
+            id: row.id,
+            wo_id: row.wo_id,
+            fault_start_ts: row.fault_start_ts,
+            repair_start_ts: row.repair_start_ts,
+            repair_end_ts: row.repair_end_ts,
+            technician: row.technician,
+            failure_code: row.failure_code,
+            comments: row.comments
+          }));
+        case 'training_assignments':
+          return state.data.training_assignments.map((row) => ({ ...row }));
+        case 'capa_records':
+          return state.data.capa_records.map((row) => ({ ...row }));
+        case 'safety_incidents':
+          return state.data.safety_incidents.map((row) => ({
+            id: row.id,
+            date: row.date,
+            line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+            type: row.type,
+            severity: row.severity,
+            lost_time_hours: row.lost_time_hours,
+            description: row.description,
+            status: row.status,
+            corrective_actions: row.corrective_actions
+          }));
+        case 'safety_walks':
+          return state.data.safety_walks.map((row) => ({ ...row }));
+        case 'hours_worked':
+          return state.data.hours_worked.map((row) => ({
+            id: row.id,
+            date: row.date,
+            line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+            hours: row.hours
+          }));
+        case 'lines':
+          return state.data.lines.map((row) => ({ ...row }));
+        default:
+          return [];
+      }
+    }
+
+    function downloadData(key) {
+      const rows = prepareExportRows(key);
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, templates[key] ? templates[key].label : key);
+      const filename = `${key}_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      logEvent('export_log', `Data exported: ${key} (${rows.length} rows)`);
+    }
+
+    function normalizeImportRow(key, row) {
+      const cleanRow = {};
+      const tpl = templates[key];
+      const required = tpl.required;
+      const allColumns = new Set(required.concat(tpl.optional));
+      for (const column of required) {
+        if (!(column in row)) {
+          throw new Error(`Missing required column: ${column}`);
+        }
+      }
+      const entries = Object.entries(row).filter(([column]) => allColumns.has(column));
+      switch (key) {
+        case 'lines':
+          entries.forEach(([col, val]) => {
+            if (col === 'id') cleanRow.id = Number(val);
+            else if (col === 'is_active') cleanRow.is_active = Number(val) ? 1 : 0;
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'production_runs':
+          entries.forEach(([col, val]) => {
+            if (col === 'line') cleanRow.line_id = resolveLineId(val);
+            else if (col === 'shift') cleanRow.shift_id = resolveShiftId(val);
+            else if (col === 'planned_minutes' || col === 'good_count' || col === 'total_count') cleanRow[col] = Number(val);
+            else if (col === 'ideal_cycle_time_sec') cleanRow[col] = Number(val);
+            else if (col === 'date') cleanRow.date = val ? String(val).slice(0, 10) : null;
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'downtime_events':
+          entries.forEach(([col, val]) => {
+            if (col === 'line') cleanRow.line_id = resolveLineId(val);
+            else if (col === 'start_ts' || col === 'end_ts') cleanRow[col] = formatIso(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'maintenance_work_orders':
+          entries.forEach(([col, val]) => {
+            if (col === 'line') cleanRow.line_id = resolveLineId(val);
+            else if (['request_ts', 'start_ts', 'end_ts', 'due_date'].includes(col)) cleanRow[col] = formatIso(val);
+            else if (col === 'id') cleanRow.id = Number(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'maintenance_repairs':
+          entries.forEach(([col, val]) => {
+            if (col === 'id' || col === 'wo_id') cleanRow[col] = Number(val);
+            else if (['fault_start_ts', 'repair_start_ts', 'repair_end_ts'].includes(col)) cleanRow[col] = formatIso(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'training_assignments':
+        case 'capa_records':
+          entries.forEach(([col, val]) => {
+            if (['due_date', 'completed_date', 'opened_date', 'closed_date'].includes(col)) cleanRow[col] = formatIso(val);
+            else if (col === 'id') cleanRow.id = Number(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'safety_incidents':
+          entries.forEach(([col, val]) => {
+            if (col === 'line') cleanRow.line_id = resolveLineId(val);
+            else if (col === 'lost_time_hours') cleanRow[col] = Number(val);
+            else if (col === 'date') cleanRow.date = formatIso(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'safety_walks':
+          entries.forEach(([col, val]) => {
+            if (['scheduled_date', 'completed_date'].includes(col)) cleanRow[col] = formatIso(val);
+            else if (col === 'id') cleanRow.id = Number(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        case 'hours_worked':
+          entries.forEach(([col, val]) => {
+            if (col === 'line') cleanRow.line_id = resolveLineId(val);
+            else if (col === 'date') cleanRow.date = formatIso(val);
+            else if (col === 'hours' || col === 'id') cleanRow[col] = Number(val);
+            else cleanRow[col] = val;
+          });
+          break;
+        default:
+          entries.forEach(([col, val]) => {
+            cleanRow[col] = val;
+          });
+      }
+      return cleanRow;
+    }
+
+    async function handleImport(key, file) {
+      if (!file) return;
+      try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+        const transformed = rows.map((row) => normalizeImportRow(key, row));
+        const collection = state.data[key];
+        if (!Array.isArray(collection)) {
+          throw new Error(`Target collection not found for ${key}`);
+        }
+        if (key === 'lines') {
+          transformed.forEach((row) => {
+            const existing = state.data.lines.find((l) => l.id === row.id);
+            if (existing) Object.assign(existing, row);
+            else state.data.lines.push(row);
+          });
+        } else {
+          transformed.forEach((row) => {
+            if (!row.id) {
+              row.id = collection.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
+            }
+            const existingIndex = collection.findIndex((item) => item.id === row.id);
+            if (existingIndex >= 0) collection[existingIndex] = { ...collection[existingIndex], ...row };
+            else collection.push(row);
+          });
+        }
+        persist();
+        setupFilters();
+        renderPage();
+        logEvent('import_log', `${templates[key].label} imported (${transformed.length} rows)`);
+      } catch (error) {
+        console.error(error);
+        logEvent('error_log', `Import failed for ${key}: ${error.message}`);
+        alert(`Import failed: ${error.message}`);
+      }
+    }
+
+    function downloadJsonBackup() {
+      const data = JSON.stringify(state.data, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ie_dashboard_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      logEvent('backup_log', 'Backup exported');
+    }
+
+    async function restoreJsonBackup(file) {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        state.data = { ...DEFAULT_DATA(), ...parsed };
+        persist();
+        setupFilters();
+        renderPage();
+        logEvent('backup_log', 'Backup restored');
+      } catch (error) {
+        console.error(error);
+        logEvent('error_log', `Backup restore failed: ${error.message}`);
+        alert(`Backup restore failed: ${error.message}`);
+      }
+    }
+
+    function resetApplication(confirmReset = true) {
+      if (confirmReset && !confirm('Reset dashboard data to factory defaults?')) {
+        return;
+      }
+      state.data = seedWithSampleData(DEFAULT_DATA());
+      persist();
+      setupFilters();
+      renderPage();
+      logEvent('backup_log', 'Application reset to defaults');
+    }
+
+    function exportOeeSummary() {
+      const rows = computeOee().map((row) => ({
+        date: row.date,
+        line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+        availability: row.availability,
+        performance: row.performance,
+        quality: row.quality,
+        oee: row.oee,
+        downtime_minutes: row.downtime,
+        good_count: row.good_count,
+        total_count: row.total_count,
+      }));
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows, { header: ['date', 'line', 'availability', 'performance', 'quality', 'oee', 'downtime_minutes', 'good_count', 'total_count'] });
+      XLSX.utils.book_append_sheet(wb, ws, 'OEE');
+      XLSX.writeFile(wb, `oee_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', `OEE summary exported (${rows.length} rows)`);
+    }
+
+    function exportMttrSummary() {
+      const summary = computeMttr();
+      const rows = Object.values(summary).map((row) => ({
+        line: state.data.lines.find((l) => l.id === row.line_id)?.name || row.line_id,
+        work_order: row.wo_id,
+        repairs: row.repairs,
+        total_minutes: row.total_minutes,
+        mttr_minutes: row.mttr_minutes,
+      }));
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows, { header: ['line', 'work_order', 'repairs', 'total_minutes', 'mttr_minutes'] });
+      XLSX.utils.book_append_sheet(wb, ws, 'MTTR');
+      XLSX.writeFile(wb, `mttr_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', `MTTR summary exported (${rows.length} rows)`);
+    }
+
+    function exportWorkOrderSummary() {
+      const result = computeWorkOrderDda();
+      const wb = XLSX.utils.book_new();
+      const detailSheet = XLSX.utils.json_to_sheet(result.detail.map((row) => ({
+        id: row.id,
+        due_date: row.due_date,
+        end_ts: row.end_ts,
+        status: row.status,
+        on_time: row.on_time,
+        days_late: row.days_late,
+      })));
+      XLSX.utils.book_append_sheet(wb, detailSheet, 'Work Orders');
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['Metric', 'Value'],
+        ['On Time %', result.pct_on_time != null ? result.pct_on_time : 'N/A'],
+        ['Completed', result.detail.filter((d) => d.status && d.status.toLowerCase() === 'closed').length],
+        ['Overdue', result.detail.filter((d) => d.days_late > 0).length],
+      ]);
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+      XLSX.writeFile(wb, `work_orders_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', 'Work order summary exported');
+    }
+
+    function exportTrainingSummary() {
+      const result = computeTrainingCompliance();
+      const detailSheet = XLSX.utils.json_to_sheet(result.detail);
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['Metric', 'Value'],
+        ['Compliance %', result.compliance_pct != null ? result.compliance_pct : 'N/A'],
+        ['Overdue', result.overdue],
+        ['Assignments', result.detail.length],
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, detailSheet, 'Assignments');
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+      XLSX.writeFile(wb, `training_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', 'Training summary exported');
+    }
+
+    function exportCapaSummary() {
+      const result = computeCapaDda();
+      const detailSheet = XLSX.utils.json_to_sheet(result.detail);
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['Metric', 'Value'],
+        ['On Time %', result.pct_on_time != null ? result.pct_on_time : 'N/A'],
+        ['Overdue', result.overdue],
+        ['Open CAPAs', result.detail.filter((d) => d.status === 'open').length],
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, detailSheet, 'CAPAs');
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+      XLSX.writeFile(wb, `capa_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', 'CAPA summary exported');
+    }
+
+    function exportSafetySummary() {
+      const summary = computeSafetySummary();
+      const detailSheet = XLSX.utils.json_to_sheet(summary.detail);
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['Metric', 'Value'],
+        ['Total Incidents', summary.totalIncidents],
+        ['Recordables', summary.recordables],
+        ['LTIs', summary.lti],
+        ['Open Incidents', summary.openIncidents],
+        ['TRIR', summary.trir != null ? summary.trir : 'N/A'],
+      ]);
+      const typeSheet = XLSX.utils.json_to_sheet(Object.entries(summary.byType).map(([type, count]) => ({ type, count })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, detailSheet, 'Incidents');
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+      XLSX.utils.book_append_sheet(wb, typeSheet, 'By Type');
+      XLSX.writeFile(wb, `safety_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', 'Safety summary exported');
+    }
+
+    function exportSafetyWalkSummary() {
+      const summary = computeSafetyWalks();
+      const detailSheet = XLSX.utils.json_to_sheet(summary.detail);
+      const ownerSheet = XLSX.utils.json_to_sheet(Object.entries(summary.breakdown).map(([owner, stats]) => ({
+        owner,
+        completed: stats.total,
+        on_time_rate: stats.total ? (stats.onTime / stats.total) * 100 : null,
+      })));
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['Metric', 'Value'],
+        ['On Time %', summary.onTimeRate != null ? summary.onTimeRate : 'N/A'],
+        ['Overdue', summary.overdue],
+        ['Completed', summary.detail.filter((d) => d.completed_date).length],
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, detailSheet, 'Walks');
+      XLSX.utils.book_append_sheet(wb, ownerSheet, 'Owners');
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+      XLSX.writeFile(wb, `safety_walks_summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      logEvent('export_log', 'Safety walk summary exported');
+    }
+
+    function renderAdmin(container) {
+      const section = document.createElement('section');
+      section.innerHTML = `
+        <h2>Administration & Data Stewardship</h2>
+        <div class="flex">
+          <div>
+            <h3>Excel Templates</h3>
+            <p>Download validated headers for each domain.</p>
+            <ul>
+              ${Object.keys(templates)
+                .map((key) => `<li><button class="button-link download-template" data-template="${key}">Download ${templates[key].label}</button></li>`)
+                .join('')}
+            </ul>
+          </div>
+          <div>
+            <h3>Import Data</h3>
+            <p>Select a template-compliant workbook to import. Existing IDs will update.</p>
+            ${Object.keys(templates)
+              .map((key) => `
+                <label style="display:block;margin-bottom:0.5rem;">
+                  ${templates[key].label}
+                  <input class="import-input" data-template="${key}" type="file" accept=".xlsx,.xls" />
+                </label>
+              `)
+              .join('')}
+          </div>
+          <div>
+            <h3>Export Raw Tables</h3>
+            <p>Download filtered datasets with lookup values resolved.</p>
+            ${Object.keys(templates)
+              .map((key) => `<button class="button-link export-table" data-template="${key}">Export ${templates[key].label}</button>`)
+              .join('')}
+          </div>
+        </div>
+        <hr style="margin:1.5rem 0;border:none;height:1px;background:rgba(27,73,101,0.2);" />
+        <div class="flex">
+          <div>
+            <h3>KPI Exports</h3>
+            <div class="actions">
+              <button class="button-link export-kpi" data-kpi="oee">OEE Summary</button>
+              <button class="button-link export-kpi" data-kpi="mttr">MTTR Summary</button>
+              <button class="button-link export-kpi" data-kpi="wo">Work Order DDA</button>
+              <button class="button-link export-kpi" data-kpi="training">Training DDA</button>
+              <button class="button-link export-kpi" data-kpi="capa">CAPA DDA</button>
+              <button class="button-link export-kpi" data-kpi="safety">Safety Metrics</button>
+              <button class="button-link export-kpi" data-kpi="walks">Safety Walks</button>
+            </div>
+          </div>
+          <div>
+            <h3>Backups</h3>
+            <button class="button-link" id="backup-download">Export JSON Backup</button>
+            <label style="display:block;margin-top:0.6rem;">
+              Restore Backup
+              <input type="file" id="backup-restore" accept="application/json" />
+            </label>
+            <button class="button-link" id="reset-app" style="margin-top:0.6rem;background:#e76f51;">Reset to Defaults</button>
+          </div>
+          <div>
+            <h3>Offline Validation</h3>
+            <p>Run automated checks to confirm the dashboard stays offline.</p>
+            <button class="button-link" id="offline-audit">Run Offline Audit</button>
+            <div id="offline-audit-results" class="log" style="margin-top:0.6rem;">No audit run yet.</div>
+          </div>
+          <div>
+            <h3>Logs</h3>
+            <p>Import log</p>
+            <div class="log">${formatLog(state.data.import_log)}</div>
+            <p style="margin-top:0.6rem;">Export log</p>
+            <div class="log">${formatLog(state.data.export_log)}</div>
+            <p style="margin-top:0.6rem;">Errors</p>
+            <div class="log">${formatLog(state.data.error_log)}</div>
+            <p style="margin-top:0.6rem;">Validation</p>
+            <div class="log">${formatLog(state.data.validation_log)}</div>
+          </div>
+        </div>
+      `;
+      container.appendChild(section);
+
+      section.querySelectorAll('.download-template').forEach((btn) => {
+        btn.addEventListener('click', () => downloadTemplate(btn.dataset.template));
+      });
+
+      section.querySelectorAll('.import-input').forEach((input) => {
+        input.addEventListener('change', (event) => {
+          const file = event.target.files?.[0];
+          if (file) handleImport(input.dataset.template, file);
+          event.target.value = '';
+        });
+      });
+
+      section.querySelectorAll('.export-table').forEach((btn) => {
+        btn.addEventListener('click', () => downloadData(btn.dataset.template));
+      });
+
+      section.querySelectorAll('.export-kpi').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          switch (btn.dataset.kpi) {
+            case 'oee':
+              exportOeeSummary();
+              break;
+            case 'mttr':
+              exportMttrSummary();
+              break;
+            case 'wo':
+              exportWorkOrderSummary();
+              break;
+            case 'training':
+              exportTrainingSummary();
+              break;
+            case 'capa':
+              exportCapaSummary();
+              break;
+            case 'safety':
+              exportSafetySummary();
+              break;
+            case 'walks':
+              exportSafetyWalkSummary();
+              break;
+          }
+        });
+      });
+
+      section.querySelector('#offline-audit').addEventListener('click', () => runOfflineAudit());
+      section.querySelector('#backup-download').addEventListener('click', () => downloadJsonBackup());
+      section.querySelector('#backup-restore').addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (file) restoreJsonBackup(file);
+        event.target.value = '';
+      });
+      section.querySelector('#reset-app').addEventListener('click', () => resetApplication(true));
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // Refresh filters in case data was restored while hidden
+        setupFilters();
+      }
+    });
+
+    loadData();
+    document.getElementById('version').textContent = APP_VERSION;
+    setupNavigation();
+    setupFilters();
+    renderPage();
+    window.addEventListener('hashchange', renderPage);
+  </script>
+</body>
+</html>
